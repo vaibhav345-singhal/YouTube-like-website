@@ -1,0 +1,58 @@
+<%@page  import="java.sql.*" %>
+<%
+    try {
+        String v_code = request.getParameter("v_code");
+        String email = request.getParameter("email");
+
+        try {
+
+            int flag = 0;
+            Class.forName("com.mysql.jdbc.Driver");
+            Connection cn = DriverManager.getConnection("jdbc:mysql://localhost:3306/youtube", "root", "");
+
+            PreparedStatement ptst = cn.prepareStatement("select * from `like` where video_code='" + v_code + "' and user = '" + email + "' ");
+            ResultSet rtst = ptst.executeQuery();
+            if (rtst.next()) {
+                PreparedStatement ptst1 = cn.prepareStatement("Delete from `like` where video_code='" + v_code + "' and user = '" + email + "' ");
+                if (ptst1.executeUpdate() > 0) {
+                    flag = 1;
+                    out.println(flag);
+                }
+
+            } else {
+
+                int sn = 0;
+
+                PreparedStatement ps = cn.prepareStatement("SELECT MAX(sn) FROM `like`");
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    sn = rs.getInt(1);
+                }
+                sn++;
+                PreparedStatement pst = cn.prepareStatement("insert into `like` values(?,?,?)");
+                pst.setInt(1, sn);
+                pst.setString(2, v_code);
+                pst.setString(3, email);
+
+                if (pst.executeUpdate() > 0) {
+                    flag = 2;
+                    out.println(flag);
+                    Statement st1 = cn.createStatement();
+                    ResultSet rs1 = st1.executeQuery("select * from `dislike` where video_code='" + v_code + "' and user = '" + email + "'");
+                    if (rs1.next()) {
+                        PreparedStatement ptst1 = cn.prepareStatement("delete from `dislike` where video_code='" + v_code + "' and user = '" + email + "'");
+                        ptst1.executeUpdate();
+                    }
+                } else {
+                    out.println(flag);
+                }
+                cn.close();
+            }
+        } catch (Exception er) {
+            out.println(er.getMessage());
+        }
+
+    } catch (Exception er) {
+        out.println(er.getMessage());
+    }
+%>
